@@ -1,0 +1,55 @@
+// Create a ContentValues object where column names are the keys,
+            // and user attributes from the editor are the values.
+            int idNum;
+            ContentValues values = new ContentValues();
+            values.put(ChargerPointsContract.UserInfoEntry.COLUMN_USERNAME, mEmail);
+            values.put(ChargerPointsContract.UserInfoEntry.COLUMN_PASSWORD, mPassword);
+
+            // Insert a new user into the provider, returning the content URI for the new user.
+            Uri newUri = getContentResolver().insert(ChargerPointsContract.UserInfoEntry.USER_INFO_CONTENT_URI, values);
+
+            //Get user id and add their account to the points table
+            ChargerPointsDbHelper mNewDbHelper = new ChargerPointsDbHelper(this);
+            // Create and/or open a database to read from it
+            SQLiteDatabase db3 = mNewDbHelper.getReadableDatabase();
+
+            // Define a projection that specifies which columns from the database
+            // you will actually use after this query.
+            String[] projection = {ChargerPointsContract.UserInfoEntry._ID};
+
+            // Perform a query on the user info table
+            Cursor cursor = db3.query(
+                    ChargerPointsContract.UserInfoEntry.TABLE_NAME,   // The table to query
+                    projection,            // The columns to return
+                    null,                  // The columns for the WHERE clause
+                    null,                  // The values for the WHERE clause
+                    null,                  // Don't group the rows
+                    null,                  // Don't filter by row groups
+                    null);                 // The sort order
+
+            try {
+                //Get the number of users in table and set the id # of the last user to idNum
+                int cnt = cursor.getCount();
+                idNum = cnt;
+
+                // Insert id into points table
+                // Create database helper
+                ChargerPointsDbHelper mDbUserHelper = new ChargerPointsDbHelper(this);
+
+                // Gets the database in write mode
+                SQLiteDatabase db2 = mDbUserHelper.getWritableDatabase();
+
+                // Create a ContentValues object where column names are the keys,
+                // and user attributes from the editor are the values.
+                ContentValues userValues = new ContentValues();
+                userValues.put(ChargerPointsContract.PointsEntry._ID, idNum);
+                userValues.put(ChargerPointsContract.PointsEntry.COLUMN_POINTS, 0);
+
+                // Insert a new row for user in the points, returning if the user was created or not.
+                db2.insert(ChargerPointsContract.PointsEntry.TABLE_NAME, null, userValues);
+                newUri = getContentResolver().insert(ChargerPointsContract.UserInfoEntry.USER_INFO_CONTENT_URI, values);
+
+            } finally {
+                // Always close the cursor when you're done reading from it. This releases all its
+                // resources and makes it invalid.
+                cursor.close(); }
